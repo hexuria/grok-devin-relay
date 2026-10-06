@@ -11,7 +11,7 @@
   "session_settings": {
     "net_policy": {"allow": [
       {"hostname": "git-manager.devin.ai"},
-      {"hostname": "api2.cursor.sh"}
+      {"hostname": "relay.example.com"}
     ]}
   },
   "notifications": {"email": {"when": "dispatch_failed"}},

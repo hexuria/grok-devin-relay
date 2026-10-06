@@ -19,8 +19,8 @@ its POST body does **not** retarget that action.
 - **Dynamic routing:** an external Grok router/registry or the official v3 API
   chooses the destination. It is not built into a body-level `session_id`.
 
-For the example session
-`https://app.devin.ai/sessions/1cc5cef5b0f04938a9f49ce7cd0d9fd0`,
+For a session link such as
+`https://app.devin.ai/sessions/00000000000000000000000000000001`,
 send a *connect request* to bootstrap, then use the returned dedicated
 destination after approval. Do not expect a task sent to bootstrap to
 automatically execute in that session.
