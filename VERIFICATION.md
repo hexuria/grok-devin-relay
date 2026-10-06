@@ -5,7 +5,7 @@ independently in a fresh clone on the same date.
 
 ## Passed locally
 
-- `python3 -m unittest discover -s tests -v`: 50 tests passed.
+- `python3 -m unittest discover -s tests -v`: 52 tests passed.
 - `python3 -m flake8 scripts tests --max-line-length=100`: passed.
 - `python3 -m compileall -q scripts tests`: passed.
 - `python3 -m mypy scripts --ignore-missing-imports`: passed; no issues in

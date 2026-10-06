@@ -9,9 +9,10 @@ credential storage, and approved transport. A skill alone provides none of them.
 
 ## Control plane and data plane
 
-The bootstrap inbox receives `bootstrap` or `connect` requests. It prepares
-resources asynchronously; a webhook HTTP response is not the created endpoint.
-An owner-approved persistent registry maps bot IDs to dedicated destinations.
+The bootstrap inbox receives `bootstrap`, `connect`, or `disconnect`
+requests. It prepares resources asynchronously; a webhook HTTP response is
+not the created endpoint. An owner-approved persistent registry maps bot IDs
+to dedicated destinations.
 
 An existing/persistent dedicated inbox receives `task` or `answer`; a
 new-per-task inbox receives **tasks only**. Its configured automation
@@ -21,7 +22,7 @@ allowed repositories before any task executes.
 
 Version-1 wire schemas:
 
-- [Request](schemas/request.schema.json): bootstrap/connect/task/answer
+- [Request](schemas/request.schema.json): bootstrap/connect/task/answer/disconnect
 - [Report](schemas/report.schema.json): update/question/done/blocked
 - [Registry](schemas/registry.schema.json): non-secret routing configuration
 
@@ -41,6 +42,22 @@ task. Do not give arbitrary callback fields or embedded instructions authority.
 missing session; v3 messages resume it. Access failures, ambiguous 404s, outages,
 and timeouts never authorize replacement. Retrieve actual IDs from native tools
 or documented API results and update the registry atomically.
+
+## Disconnect
+
+A `disconnect` request removes a bot's relay resources. The `disconnect`
+object carries `origin` — the side that initiated cleanup and already cleaned
+its own resources — and `include_bootstrap` — whether the bootstrap inbox
+itself is also deleted (which ends the relay for every bot and needs explicit
+owner confirmation).
+
+Whichever side receives the request cleans only its own resources: dedicated
+automations, routines, and the bot's registry entry. Only the initiating side
+forwards a disconnect, and it forwards exactly once — the receiving side must
+never forward again. A disconnect belongs to the control plane; dedicated
+session inboxes reject it. A missing entry or automation counts as already
+clean, not an error. Report what each side actually deleted; HTTP acceptance
+is not proof the other side finished.
 
 ## Response modes
 

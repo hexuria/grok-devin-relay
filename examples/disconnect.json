@@ -1,0 +1,11 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-disconnect-001",
+  "operation": "disconnect",
+  "bot_id": "pua-review",
+  "repo": "hexuria/pua",
+  "disconnect": {
+    "origin": "grok",
+    "include_bootstrap": false
+  }
+}

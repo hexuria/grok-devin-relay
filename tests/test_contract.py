@@ -33,6 +33,7 @@ class RequestTests(unittest.TestCase):
             "connect-existing.json",
             "connect-new-persistent.json",
             "connect-new-per-task.json",
+            "disconnect.json",
             "task-final.json",
             "task-none.json",
             "answer-approve.json",
@@ -297,6 +298,12 @@ class DeliveryTests(unittest.TestCase):
         bot["session_id"] = SESSION_ID
         contract.check_delivery(self.request, self.registry, **self.context)
 
+    def test_management_operations_reach_only_control_plane(self):
+        for name in ("connect-existing.json", "disconnect.json", "bootstrap-devin.json"):
+            with self.subTest(name=name):
+                with self.assertRaises(contract.ContractError):
+                    contract.check_delivery(example(name), self.registry, **self.context)
+
     def test_per_task_inbox_must_not_launch_a_new_session_for_an_answer(self):
         bot = self.registry["bots"]["pua-review"]
         bot["session_mode"] = "new_per_task"
@@ -455,7 +462,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(manifest["name"], "grok-devin-relay")
         expected = {
             "relay-install", "relay-bootstrap-devin", "relay-connect-session",
-            "relay-message", "grok-relay-report",
+            "relay-message", "relay-cleanup", "grok-relay-report",
         }
         paths = list((ROOT / "skills").glob("*/SKILL.md"))
         self.assertEqual({path.parent.name for path in paths}, expected)

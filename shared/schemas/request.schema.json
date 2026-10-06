@@ -7,7 +7,7 @@
   "properties": {
     "protocol_version": {"const": "1"},
     "request_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$", "not": {"pattern": "[\\r\\n]"}},
-    "operation": {"enum": ["bootstrap", "connect", "task", "answer"]},
+    "operation": {"enum": ["bootstrap", "connect", "task", "answer", "disconnect"]},
     "bot_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$", "not": {"pattern": "[\\r\\n]"}},
     "repo": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", "not": {"pattern": "[\\r\\n]"}},
     "provider": {"enum": ["devin", "grok"]},
@@ -41,7 +41,16 @@
     },
     "in_reply_to": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$", "not": {"pattern": "[\\r\\n]"}},
     "decision": {"enum": ["approve", "deny", "select"]},
-    "selected_option": {"type": "string", "minLength": 1}
+    "selected_option": {"type": "string", "minLength": 1},
+    "disconnect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["origin"],
+      "properties": {
+        "origin": {"enum": ["devin", "grok"]},
+        "include_bootstrap": {"type": "boolean"}
+      }
+    }
   },
   "oneOf": [
     {
@@ -81,6 +90,16 @@
       "if": {"properties": {"decision": {"const": "select"}}},
       "then": {"required": ["selected_option"]},
       "else": {"not": {"required": ["selected_option"]}}
+    },
+    {
+      "properties": {"operation": {"const": "disconnect"}},
+      "required": ["disconnect"],
+      "not": {"anyOf": [
+        {"required": ["provider"]}, {"required": ["session"]},
+        {"required": ["task"]}, {"required": ["response_mode"]},
+        {"required": ["in_reply_to"]}, {"required": ["decision"]},
+        {"required": ["selected_option"]}
+      ]}
     }
   ]
 }

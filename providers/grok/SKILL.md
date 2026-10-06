@@ -90,3 +90,29 @@ Resolve the original session and its approved reply route from durable question
 state. Use the documented existing-session API or an approved inbox fixed to
 that session. If neither is configured, tell the owner to answer directly in
 that Devin session and keep paused.
+
+## Cleanup
+
+One request cleans both sides: whichever side is asked first cleans its own
+resources, then forwards a `disconnect` request so the other side does the
+same. The receiver never forwards again — that prevents loops.
+
+### Asked on the Grok side ("clean up bot X")
+
+1. Confirm scope with the owner: the `bot_id`, and whether the whole relay
+   ends (`include_bootstrap` — requires explicit confirmation).
+2. Delete the bot's routines/scheduled jobs and its registry entries on Grok's
+   side through supported host tools. Leave other bots untouched.
+3. POST a `disconnect` request to the Devin bootstrap inbox with
+   `origin: "grok"` and the same `include_bootstrap`, using the inbox's
+   `X-Webhook-Secret`. Devin then deletes its automations for that bot.
+4. Report what was deleted. HTTP acceptance is not proof Devin finished.
+
+### A disconnect request arrives from Devin
+
+`origin: "devin"` means Devin already cleaned its side: delete the bot's
+Grok routines and registry entries and do not forward a new disconnect back.
+Confirm through the approved report path.
+
+A missing routine or registry entry means that part is already clean —
+report it, do not fail.
