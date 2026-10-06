@@ -1,0 +1,57 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Grok Devin relay registry v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "bots"],
+  "properties": {
+    "protocol_version": {"const": "1"},
+    "bots": {
+      "type": "object",
+      "propertyNames": {"pattern": "^[a-z0-9][a-z0-9._-]{0,63}$", "not": {"pattern": "[\\r\\n]"}},
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "org_id", "owner_id", "automation_id", "session_mode", "session_id",
+          "allowed_repos", "inbox_url_secret_ref", "inbox_key_secret_ref",
+          "return_url_secret_ref", "return_key_secret_ref", "return_host"
+        ],
+        "properties": {
+          "org_id": {"type": "string", "pattern": "^org-[A-Za-z0-9-]+$", "not": {"pattern": "[\\r\\n]"}},
+          "owner_id": {"type": "string", "minLength": 1},
+          "automation_id": {"type": "string", "pattern": "^auto-[A-Za-z0-9-]+$", "not": {"pattern": "[\\r\\n]"}},
+          "session_mode": {"enum": ["existing", "new_persistent", "new_per_task"]},
+          "session_id": {"type": ["string", "null"], "pattern": "^devin-[0-9a-f]{32}$", "not": {"type": "string", "pattern": "[\\r\\n]"}},
+          "allowed_repos": {
+            "type": "array", "minItems": 1, "uniqueItems": true,
+            "items": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", "not": {"pattern": "[\\r\\n]"}}
+          },
+          "inbox_url_secret_ref": {"$ref": "#/definitions/secretRef"},
+          "inbox_key_secret_ref": {"$ref": "#/definitions/secretRef"},
+          "return_url_secret_ref": {"$ref": "#/definitions/secretRef"},
+          "return_key_secret_ref": {"$ref": "#/definitions/secretRef"},
+          "return_host": {"type": "string", "pattern": "^[a-z0-9]+([.-][a-z0-9]+)*\\.[a-z]{2,}$", "not": {"pattern": "[\\r\\n]"}}
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"session_mode": {"const": "existing"}}},
+            "then": {"properties": {"session_id": {"type": "string"}}}
+          },
+          {
+            "if": {"properties": {"session_mode": {"const": "new_per_task"}}},
+            "then": {"properties": {"session_id": {"type": "null"}}}
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "secretRef": {
+      "type": "string",
+      "description": "Devin qualified reference or provider-adapter alias, never a credential value. An adapter alias is not a native secret-storage format.",
+      "pattern": "^(secret:((org|personal|session):[A-Z][A-Z0-9_]*|repo:[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+:[A-Z][A-Z0-9_]*)|adapter:[a-z0-9-]+:[A-Za-z0-9._/-]+)$",
+      "not": {"pattern": "[\\r\\n]"}
+    }
+  }
+}

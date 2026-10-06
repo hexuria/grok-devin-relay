@@ -1,0 +1,5 @@
+{
+  "name": "grok-devin-relay",
+  "version": "0.1.0",
+  "description": "Devin-side relay lifecycle skills with a shared, provider-neutral Grok messaging contract."
+}

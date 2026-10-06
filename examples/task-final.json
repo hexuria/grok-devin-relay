@@ -1,0 +1,9 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-task-001",
+  "operation": "task",
+  "bot_id": "pua-review",
+  "repo": "hexuria/pua",
+  "task": "Review the relay contract. No code or live automation changes.",
+  "response_mode": "final"
+}

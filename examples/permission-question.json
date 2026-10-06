@@ -1,0 +1,15 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-task-001",
+  "bot_id": "pua-review",
+  "kind": "question",
+  "repo": "hexuria/pua",
+  "session_url": "https://app.devin.ai/sessions/1cc5cef5b0f04938a9f49ce7cd0d9fd0",
+  "pr": null,
+  "summary": "Should I prepare a separate test webhook?",
+  "details": "No live configuration will change without the required approval.",
+  "options": ["Prepare a separate test webhook", "Do not create a webhook"],
+  "default_if_no_answer": "Remain paused; do not perform the action.",
+  "question_id": "example-question-001",
+  "decision_type": "permission"
+}

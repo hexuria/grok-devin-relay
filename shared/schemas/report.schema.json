@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Grok Devin relay report v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "kind", "repo", "session_url", "pr", "summary", "details", "options",
+    "default_if_no_answer", "protocol_version", "request_id", "bot_id",
+    "question_id", "decision_type"
+  ],
+  "properties": {
+    "protocol_version": {"const": "1"},
+    "request_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$", "not": {"pattern": "[\\r\\n]"}},
+    "bot_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$", "not": {"pattern": "[\\r\\n]"}},
+    "kind": {"enum": ["update", "question", "done", "blocked"]},
+    "repo": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", "not": {"type": "string", "pattern": "[\\r\\n]"}},
+    "session_url": {"type": "string", "pattern": "^https://app\\.devin\\.ai/sessions/[0-9a-f]{32}$", "not": {"pattern": "[\\r\\n]"}},
+    "pr": {"type": ["string", "null"], "format": "uri", "pattern": "^https://"},
+    "summary": {"type": "string", "minLength": 1, "pattern": "^[^\\r\\n]+$"},
+    "details": {"type": "string"},
+    "options": {"type": "array", "items": {"type": "string", "minLength": 1}, "uniqueItems": true},
+    "default_if_no_answer": {"type": ["string", "null"]},
+    "question_id": {"type": ["string", "null"], "pattern": "^[A-Za-z0-9._-]{1,128}$", "not": {"type": "string", "pattern": "[\\r\\n]"}},
+    "decision_type": {"enum": ["clarification", "permission", "platform_approval", null]}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"kind": {"const": "question"}}},
+      "then": {
+        "properties": {
+          "options": {"minItems": 1},
+          "question_id": {"type": "string"},
+          "decision_type": {"enum": ["clarification", "permission", "platform_approval"]}
+        }
+      },
+      "else": {
+        "properties": {
+          "options": {"maxItems": 0},
+          "question_id": {"type": "null"},
+          "decision_type": {"type": "null"}
+        }
+      }
+    },
+    {
+      "if": {"properties": {"decision_type": {"enum": ["permission", "platform_approval"]}}},
+      "then": {
+        "properties": {
+          "default_if_no_answer": {"const": "Remain paused; do not perform the action."}
+        }
+      }
+    }
+  ]
+}

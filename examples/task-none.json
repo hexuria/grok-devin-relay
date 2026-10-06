@@ -1,0 +1,9 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-task-002",
+  "operation": "task",
+  "bot_id": "pua-review",
+  "repo": "hexuria/pua",
+  "task": "Read the relay contract. No changes and no routine reply.",
+  "response_mode": "none"
+}

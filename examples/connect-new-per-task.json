@@ -1,0 +1,12 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-connect-003",
+  "operation": "connect",
+  "bot_id": "pua-review-isolated",
+  "repo": "hexuria/pua",
+  "session": {
+    "mode": "new_per_task",
+    "target": null,
+    "if_missing": "block"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-answer-001",
+  "operation": "answer",
+  "bot_id": "pua-review",
+  "repo": "hexuria/pua",
+  "in_reply_to": "example-question-001",
+  "decision": "approve"
+}
