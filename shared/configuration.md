@@ -39,18 +39,20 @@ run-as does not turn arbitrary payloads into owner approval.
 
 ## Network policy
 
-This organization's current Git Manager starting policy plus return relay:
+The Git Manager starting policy plus the org's approved return-relay host:
 
 ```json
 {
   "allow": [
     {"hostname": "git-manager.devin.ai"},
-    {"hostname": "api2.cursor.sh"}
+    {"hostname": "relay.example.com"}
   ]
 }
 ```
 
-Use exact hostname destinations; in the UI, add `api2.cursor.sh`, not a URL.
+`relay.example.com` is a placeholder; substitute the org's verified relay
+hostname at setup time. Use exact hostname destinations; in the UI, add the
+hostname itself, not a URL.
 Do not disable restriction merely to make delivery work. If a security profile
 governs networking, follow its approved policy instead of escaping it.
 Preserve unrelated existing entries on updates.

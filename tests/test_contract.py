@@ -10,8 +10,8 @@ import yaml
 from scripts import relay_contract as contract
 
 ROOT = Path(__file__).resolve().parents[1]
-SESSION_ID = "devin-1cc5cef5b0f04938a9f49ce7cd0d9fd0"
-SESSION_URL = "https://app.devin.ai/sessions/1cc5cef5b0f04938a9f49ce7cd0d9fd0"
+SESSION_ID = "devin-00000000000000000000000000000001"
+SESSION_URL = "https://app.devin.ai/sessions/00000000000000000000000000000001"
 
 
 def example(name):
@@ -438,6 +438,18 @@ class PackageTests(unittest.TestCase):
             contract.validate("request", request)
         self.assertNotIn(sentinel, str(caught.exception))
 
+    def test_only_synthetic_session_ids_in_repo(self):
+        allowed = {
+            "devin-00000000000000000000000000000001",
+            "devin-0123456789abcdef0123456789abcdef",
+        }
+        for pattern in ("*.md", "*.json", "*.py"):
+            for path in source_paths(pattern):
+                content = path.read_text(encoding="utf-8")
+                for found in re.findall(r"devin-[0-9a-f]{32}", content):
+                    with self.subTest(path=str(path.relative_to(ROOT)), found=found):
+                        self.assertIn(found, allowed)
+
     def test_manifest_and_only_devin_root_skills(self):
         manifest = contract.load_json(ROOT / ".devin-plugin" / "plugin.json")
         self.assertEqual(manifest["name"], "grok-devin-relay")
@@ -478,7 +490,7 @@ class PackageTests(unittest.TestCase):
                 hosts = config["session_settings"]["net_policy"]["allow"]
                 self.assertEqual(hosts, [
                     {"hostname": "git-manager.devin.ai"},
-                    {"hostname": "api2.cursor.sh"},
+                    {"hostname": "relay.example.com"},
                 ])
                 self.assertIn("EXAMPLE ONLY", config["actions"][0]["prompt"])
 

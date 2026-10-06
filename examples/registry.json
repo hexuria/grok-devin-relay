@@ -6,13 +6,13 @@
       "owner_id": "user-example",
       "automation_id": "auto-example",
       "session_mode": "existing",
-      "session_id": "devin-1cc5cef5b0f04938a9f49ce7cd0d9fd0",
+      "session_id": "devin-00000000000000000000000000000001",
       "allowed_repos": ["hexuria/pua"],
       "inbox_url_secret_ref": "adapter:grok:pua-review-inbox-url",
       "inbox_key_secret_ref": "adapter:grok:pua-review-inbox-secret",
       "return_url_secret_ref": "secret:repo:hexuria/pua:GROK_WEBHOOK_URL",
       "return_key_secret_ref": "adapter:devin:pua-review-return-key",
-      "return_host": "api2.cursor.sh"
+      "return_host": "relay.example.com"
     }
   }
 }

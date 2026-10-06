@@ -6,7 +6,7 @@
   "repo": "hexuria/pua",
   "session": {
     "mode": "existing",
-    "target": "https://app.devin.ai/sessions/1cc5cef5b0f04938a9f49ce7cd0d9fd0",
+    "target": "https://app.devin.ai/sessions/00000000000000000000000000000001",
     "if_missing": "block"
   }
 }
