@@ -1,104 +1,90 @@
 # Grok ↔ Devin relay
 
-**Early draft under review.** No live webhooks were created, no plugin was
-installed, and no remote transport was tested. Grok's actual runtime and
-webhook-management APIs need confirmation.
+One repository, one shared contract, two adapters. Devin skills live under
+`skills/` (loaded by `.devin-plugin/`); the Grok adapter lives under
+`providers/grok/`. The relay lets Grok bot send tasks into Devin sessions and
+receive reports back — including permission questions that stay paused until
+the owner answers.
 
-One repository holds a shared contract and two provider adapters. Installing
-the Devin plugin does not install or activate Grok's adapter.
+## Getting started
 
-## The important routing rule
+Each step maps to one skill. Run them in order.
 
-A Devin automation webhook has a configured action. Putting a session link in
-its POST body does **not** retarget that action.
-
-- **Bootstrap webhook:** messages a control-plane session that prepares other
-  webhooks. Creation is asynchronous and may require platform approval.
-- **Dedicated webhook:** configured for one existing/persistent session, or
-  configured to start a new session for every incoming task.
-- **Dynamic routing:** an external Grok router/registry or the official v3 API
-  chooses the destination. It is not built into a body-level `session_id`.
-
-For a session link such as
-`https://app.devin.ai/sessions/00000000000000000000000000000001`,
-send a *connect request* to bootstrap, then use the returned dedicated
-destination after approval. Do not expect a task sent to bootstrap to
-automatically execute in that session.
-
-## Skills and installation boundary
-
-| Stage | Devin | Grok |
+| Step | Skill | What it does |
 |---|---|---|
-| Install | `skills/relay-install/SKILL.md` | Grok adapter's install stage |
-| First connection | `skills/relay-bootstrap-devin/SKILL.md` | Grok adapter's bootstrap stage |
-| Choose session / create webhook | `skills/relay-connect-session/SKILL.md` | Grok adapter's registry/routing stage |
-| Send tasks and answers | `skills/relay-message/SKILL.md` | Grok adapter's message stage |
-| Report results / ask permission | `skills/grok-relay-report/SKILL.md` | Grok adapter's receive/answer stage |
+| 1 | `relay-install` | Verify secrets, integrations, and network policy. Creates nothing. |
+| 2 | `relay-bootstrap-devin` | Create the ONE control-plane webhook automation. Grok posts setup requests here. |
+| 3 | `providers/grok/SKILL.md` | Install Grok's adapter on its side and bootstrap its return relay. |
+| 4 | `relay-connect-session` | Connect a bot to a Devin session — existing, new-persistent, or new-per-task — by creating a dedicated webhook. |
+| 5 | `relay-message` + `grok-relay-report` | Handle tasks in the session; send reports and questions back to Grok. |
+| — | `relay-update` | Change an existing webhook's instructions, target session, networking, or grants — with approval. |
+| — | `relay-cleanup` | Remove a bot's automations and registry entries on Devin plus its routines on Grok — one chat request cleans both sides. |
 
-Devin's `.devin-plugin/plugin.json` loads only the root `skills/` directory.
-The Grok entry point is `providers/grok/SKILL.md`, outside that directory.
-Grok must confirm its installer and supported API before enabling its adapter.
+## Walkthrough
 
-To install on Devin, inspect this repository, then ask Devin to install it as a
-plugin using the native `manage_plugin` workflow, or use Customize → Plugins →
-From repository. Choose personal or account scope explicitly. Do not install
-this draft as if it were a reviewed release.
+1. **In Devin:** ask to install this repo as a plugin → `relay-install`
+   verifies the environment.
+2. **In Devin:** bootstrap → `relay-bootstrap-devin` creates the
+   control-plane webhook automation (with approval cards).
+3. **Grok** sends a connect request to the bootstrap webhook, naming the bot,
+   the allowed repo, and the target session:
 
-The existing personal `grok-relay-report` skill may remain installed. Use the
-new plugin-qualified name to avoid ambiguous invocation. Remove or migrate the
-old skill only after testing and with the owner's approval.
+   ```json
+   {
+     "protocol_version": "1",
+     "request_id": "connect-001",
+     "operation": "connect",
+     "bot_id": "pua-review",
+     "repo": "hexuria/pua",
+     "session": {
+       "mode": "existing",
+       "target": "https://app.devin.ai/sessions/${session_id}",
+       "if_missing": "block"
+     }
+   }
+   ```
 
-## Shared contract
+4. The control plane runs `relay-connect-session` and — after approval —
+   creates a dedicated webhook automation for that bot, pointing at that
+   session. Its URL and secret go into approved secret storage; the registry
+   records bot → destination.
+5. **Grok** now POSTs tasks to that dedicated webhook:
 
-- [Protocol and safety](shared/protocol.md)
-- [Automation configuration](shared/configuration.md)
-- `shared/schemas/`: versioned request, report, and registry JSON Schemas
-- `examples/`: synthetic credentials-free fixtures and automation templates
-- `scripts/relay_contract.py`: offline validation/normalization helpers only
+   ```json
+   {
+     "protocol_version": "1",
+     "request_id": "task-001",
+     "operation": "task",
+     "bot_id": "pua-review",
+     "repo": "hexuria/pua",
+     "task": "Open a PR that fixes the flaky test",
+     "response_mode": "final"
+   }
+   ```
 
-There is **no production router, registry service, credential exchange, or
-webhook server** in this draft. The skills guide the host's supported tools.
-Do not mistake the offline Python helpers for an installed integration.
+6. The session runs `relay-message`, does the work, and reports through the
+   return relay via `grok-relay-report`. Permission questions pause until the
+   owner answers — silence is never approval.
+7. Done with a bot? Say "clean up `pua-review`" in a Devin or Grok chat →
+   `relay-cleanup` deletes its automations and routines on both sides.
 
-Response modes: `none`, `final`, and `progress`. Blockers/questions are safety
-exceptions to silence. Permission requests always pause; a platform approval
-card must be approved on the platform, not just answered in chat.
+## The one routing rule that matters
 
-For new-per-task bots, answers must use a separate original-session route,
-not the webhook that starts new tasks. See the protocol's correlation rules.
+A webhook has a fixed destination. A session link inside a task POST body
+does **not** retarget it — the connect step is what binds a bot to a session.
+To reach a different session, connect again or use the v3 session-messages API.
 
-## Offline checks
+## Layout
 
-Python 3.10+ is required. Runtime helpers use `jsonschema`; checks also use
-PyYAML. Install development dependencies from `requirements-dev.txt` if needed:
+- `skills/` — Devin plugin skills (manifest: `.devin-plugin/plugin.json`)
+- `providers/grok/` — Grok-side adapter (outside Devin's skills on purpose)
+- `shared/` — `protocol.md`, `configuration.md`, JSON Schemas (request/report/registry)
+- `examples/` — synthetic fixtures and disabled automation templates
+- `CONTRIBUTING.md` — development setup and offline checks
+- `VERIFICATION.md` — what has and has not been verified
 
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install -r requirements-dev.txt
-python3 -m unittest discover -s tests -v
-python3 scripts/relay_contract.py request examples/connect-existing.json
-python3 scripts/relay_contract.py report examples/permission-question.json
-python3 scripts/relay_contract.py registry examples/registry.json
-python3 -m compileall -q scripts tests
-python3 -m flake8 scripts tests --max-line-length=100
-python3 -m mypy scripts --ignore-missing-imports
-```
+## Status
 
-These checks do not send HTTP requests, modify a session, or create automation
-resources. Live integration testing must use owner-approved test destinations,
-with evidence of both transport acceptance and the resulting session behavior.
-
-## What Grok needs to review
-
-1. Runtime name and skill installation format.
-2. Official tools/docs for creating the return webhook and authenticating it.
-3. Secret storage/reference format and a secure exchange mechanism for newly
-   minted Devin inbox secrets.
-4. Durable registry and deduplication storage, including atomic writes.
-5. API permissions and network egress from Grok's own host.
-6. Support for protocol version 1 and correlated question/answer messages.
-
-Share documentation and redacted examples, never real keys or webhook secrets.
-Both adapters should use the same schemas rather than maintaining divergent
-field lists.
+Offline-verified: contract tests, lint, and type checks pass (see
+`CONTRIBUTING.md`). No live webhook round-trip has been exercised and Grok's
+runtime is unconfirmed — open questions for Grok are in `GROK-REVIEW.md`.

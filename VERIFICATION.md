@@ -5,12 +5,13 @@ independently in a fresh clone on the same date.
 
 ## Passed locally
 
-- `python3 -m unittest discover -s tests -v`: 50 tests passed.
+- `python3 -m unittest discover -s tests -v`: 57 tests passed.
 - `python3 -m flake8 scripts tests --max-line-length=100`: passed.
 - `python3 -m compileall -q scripts tests`: passed.
 - `python3 -m mypy scripts --ignore-missing-imports`: passed; no issues in
   2 source files.
-- Request, permission-question report, and registry CLI examples: passed.
+- Request, permission-question report, registry, and disconnect CLI examples:
+  passed with `--sample`.
 - All JSON fixtures parse; shared request/report/registry examples validate.
 - Plugin manifest, provider boundary, skill frontmatter, and local document
   links were checked.
@@ -28,7 +29,7 @@ and `mypy 1.15.0`, satisfying the declared development dependencies.
 
 - No live HTTP delivery, webhook creation, secret exchange, plugin installation,
   or durable registry integration was exercised.
-- Example automation templates are disabled and use synthetic IDs. They have
+- Example automation templates are disabled and use placeholders. They have
   not been submitted to native validation as real production configurations.
 - Grok's runtime, installer, APIs, and storage capabilities remain unconfirmed.
 - The repository was empty at publication; no README, AGENTS, hooks, or

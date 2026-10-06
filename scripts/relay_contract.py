@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import sys
+import uuid
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -13,6 +14,8 @@ from jsonschema import Draft7Validator, FormatChecker
 ROOT = Path(__file__).resolve().parents[1]
 SESSION_ID = re.compile(r"devin-[0-9a-f]{32}")
 SESSION_PATH = re.compile(r"/sessions/([0-9a-f]{32})/?")
+PLACEHOLDER = re.compile(r"\$\{([a-z_]+)\}")
+PLACEHOLDER_NAMES = ("session_id", "org_id", "automation_id", "owner_id", "relay_host")
 SCHEMA_KINDS = ("request", "report", "registry")
 RESPONSE_MODES = ("none", "final", "progress")
 REPORT_KINDS = ("update", "question", "done", "blocked")
@@ -44,6 +47,49 @@ def load_json(path: Path) -> Any:
         )
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         raise ContractError("Cannot read valid JSON") from error
+
+
+def sample_variables() -> dict[str, str]:
+    return {
+        "session_id": uuid.uuid4().hex,
+        "org_id": f"org-{uuid.uuid4().hex}",
+        "automation_id": f"auto-{uuid.uuid4().hex}",
+        "owner_id": f"user-{uuid.uuid4().hex}",
+        "relay_host": "relay.example.com",
+    }
+
+
+def render(value: Any, variables: dict[str, str]) -> Any:
+    unresolved: set[str] = set()
+
+    def replace(child: Any) -> Any:
+        if isinstance(child, dict):
+            return {replace(key): replace(nested) for key, nested in child.items()}
+        if isinstance(child, list):
+            return [replace(nested) for nested in child]
+        if isinstance(child, str):
+            return PLACEHOLDER.sub(
+                lambda match: variables.get(match.group(1), match.group(0)), child
+            )
+        return child
+
+    rendered = replace(value)
+
+    def find_unresolved(child: Any) -> None:
+        if isinstance(child, dict):
+            for key, nested in child.items():
+                find_unresolved(key)
+                find_unresolved(nested)
+        elif isinstance(child, list):
+            for nested in child:
+                find_unresolved(nested)
+        elif isinstance(child, str):
+            unresolved.update(match.group(1) for match in PLACEHOLDER.finditer(child))
+
+    find_unresolved(rendered)
+    if unresolved:
+        raise ContractError(f"Unresolved placeholder: {','.join(sorted(unresolved))}")
+    return rendered
 
 
 def _check_local_refs(value: Any) -> None:
@@ -168,15 +214,29 @@ def check_answer(
         raise ContractError("Native platform approval still required")
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("kind", choices=SCHEMA_KINDS)
     parser.add_argument("path", type=Path)
-    args = parser.parse_args()
+    parser.add_argument("--sample", action="store_true")
+    parser.add_argument("--var", action="append", default=[], metavar="NAME=VALUE")
+    args = parser.parse_args(argv)
     try:
-        validate(args.kind, load_json(args.path))
+        variables = sample_variables() if args.sample else {}
+        for variable in args.var:
+            name, separator, value = variable.partition("=")
+            if not separator:
+                raise ContractError("--var must use NAME=VALUE")
+            if name not in PLACEHOLDER_NAMES:
+                raise ContractError(f"Unknown variable: {name}")
+            variables[name] = value
+        payload = render(load_json(args.path), variables)
+        validate(args.kind, payload)
     except ContractError as error:
-        print(str(error), file=sys.stderr)
+        message = str(error)
+        if message.startswith("Unresolved placeholder:"):
+            message += "; pass --var or --sample"
+        print(message, file=sys.stderr)
         return 1
     print(f"Valid {args.kind}; offline validation only")
     return 0

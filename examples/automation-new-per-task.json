@@ -7,13 +7,19 @@
     "session": {"bypass_approval": false}
   }],
   "run_as": {"type": "creator"},
-  "tools": {"mcp_servers": []},
+  "tools": {"mcp_servers": [], "linear_enabled": false},
   "session_settings": {
+    "devin_mode": null,
     "net_policy": {"allow": [
       {"hostname": "git-manager.devin.ai"},
-      {"hostname": "relay.example.com"}
+      {"hostname": "${relay_host}"}
     ]}
   },
+  "limits": {
+    "max_acu_limit": null,
+    "invocations": {"max_per_window": 50, "window_seconds": 3600}
+  },
+  "concurrency": {"max_concurrent_runs": 1, "max_queue_depth": null},
   "notifications": {"email": {"when": "dispatch_failed"}},
   "metadata": {"relay_role": "session", "bot_id": "isolated-example", "protocol_version": "1"},
   "enabled": false

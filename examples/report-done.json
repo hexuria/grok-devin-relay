@@ -4,7 +4,7 @@
   "bot_id": "pua-review",
   "kind": "done",
   "repo": "hexuria/pua",
-  "session_url": "https://app.devin.ai/sessions/00000000000000000000000000000001",
+  "session_url": "https://app.devin.ai/sessions/${session_id}",
   "pr": null,
   "summary": "Review completed without changes.",
   "details": "This is a synthetic protocol fixture, not a real completion report.",

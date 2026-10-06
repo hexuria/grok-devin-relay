@@ -1,8 +1,11 @@
 import ast
 import copy
+import io
 import re
 import tempfile
 import unittest
+import uuid
+from contextlib import redirect_stderr
 from pathlib import Path
 
 import yaml
@@ -10,12 +13,14 @@ import yaml
 from scripts import relay_contract as contract
 
 ROOT = Path(__file__).resolve().parents[1]
-SESSION_ID = "devin-00000000000000000000000000000001"
-SESSION_URL = "https://app.devin.ai/sessions/00000000000000000000000000000001"
+VARS = contract.sample_variables()
+SESSION_ID = f"devin-{VARS['session_id']}"
+SESSION_URL = f"https://app.devin.ai/sessions/{VARS['session_id']}"
+OTHER_SESSION_ID = "devin-" + uuid.uuid4().hex
 
 
 def example(name):
-    return contract.load_json(ROOT / "examples" / name)
+    return contract.render(contract.load_json(ROOT / "examples" / name), VARS)
 
 
 def source_paths(pattern):
@@ -33,6 +38,7 @@ class RequestTests(unittest.TestCase):
             "connect-existing.json",
             "connect-new-persistent.json",
             "connect-new-per-task.json",
+            "disconnect.json",
             "task-final.json",
             "task-none.json",
             "answer-approve.json",
@@ -86,7 +92,7 @@ class RequestTests(unittest.TestCase):
         for name in ("connect-new-persistent.json", "connect-new-per-task.json"):
             with self.subTest(name=name):
                 request = example(name)
-                request["session"]["target"] = SESSION_ID
+                request["session"]["target"] = OTHER_SESSION_ID
                 with self.assertRaises(contract.ContractError):
                     contract.validate("request", request)
 
@@ -252,8 +258,8 @@ class DeliveryTests(unittest.TestCase):
         self.request = example("task-final.json")
         self.registry = example("registry.json")
         self.context = {
-            "org_id": "org-example",
-            "automation_id": "auto-example",
+            "org_id": VARS["org_id"],
+            "automation_id": VARS["automation_id"],
             "session_id": SESSION_ID,
         }
 
@@ -271,7 +277,7 @@ class DeliveryTests(unittest.TestCase):
     def test_wrong_organization_automation_or_session(self):
         for key, value in (
             ("org_id", "org-other"), ("automation_id", "auto-other"),
-            ("session_id", "devin-0123456789abcdef0123456789abcdef"),
+            ("session_id", OTHER_SESSION_ID),
         ):
             with self.subTest(key=key):
                 context = {**self.context, key: value}
@@ -282,7 +288,7 @@ class DeliveryTests(unittest.TestCase):
         bot = self.registry["bots"]["pua-review"]
         bot["session_mode"] = "new_per_task"
         bot["session_id"] = None
-        self.context["session_id"] = "devin-0123456789abcdef0123456789abcdef"
+        self.context["session_id"] = OTHER_SESSION_ID
         contract.check_delivery(self.request, self.registry, **self.context)
         self.context["automation_id"] = "auto-other"
         with self.assertRaises(contract.ContractError):
@@ -296,6 +302,12 @@ class DeliveryTests(unittest.TestCase):
             contract.check_delivery(self.request, self.registry, **self.context)
         bot["session_id"] = SESSION_ID
         contract.check_delivery(self.request, self.registry, **self.context)
+
+    def test_management_operations_reach_only_control_plane(self):
+        for name in ("connect-existing.json", "disconnect.json", "bootstrap-devin.json"):
+            with self.subTest(name=name):
+                with self.assertRaises(contract.ContractError):
+                    contract.check_delivery(example(name), self.registry, **self.context)
 
     def test_per_task_inbox_must_not_launch_a_new_session_for_an_answer(self):
         bot = self.registry["bots"]["pua-review"]
@@ -343,7 +355,7 @@ class AnswerTests(unittest.TestCase):
 
     def test_answer_goes_to_original_session(self):
         with self.assertRaises(contract.ContractError):
-            self.check(current_session_id="devin-0123456789abcdef0123456789abcdef")
+            self.check(current_session_id=OTHER_SESSION_ID)
 
     def test_closed_question_or_nonquestion_is_rejected(self):
         with self.assertRaises(contract.ContractError):
@@ -438,24 +450,69 @@ class PackageTests(unittest.TestCase):
             contract.validate("request", request)
         self.assertNotIn(sentinel, str(caught.exception))
 
-    def test_only_synthetic_session_ids_in_repo(self):
-        allowed = {
-            "devin-00000000000000000000000000000001",
-            "devin-0123456789abcdef0123456789abcdef",
-        }
+    def test_no_literal_identifiers_in_repo(self):
+        patterns = (
+            re.compile(r"devin-[0-9a-f]{32}"),
+            re.compile(r"/sessions/[0-9a-f]{32}"),
+            re.compile(r"\b[0-9a-f]{32}\b"),
+            re.compile(r"org-" + "example"),
+            re.compile(r"auto-" + "example"),
+            re.compile(r"user-" + "example"),
+            re.compile(r"relay[.]example[.]com"),
+        )
         for pattern in ("*.md", "*.json", "*.py"):
             for path in source_paths(pattern):
                 content = path.read_text(encoding="utf-8")
-                for found in re.findall(r"devin-[0-9a-f]{32}", content):
-                    with self.subTest(path=str(path.relative_to(ROOT)), found=found):
-                        self.assertIn(found, allowed)
+                for literal_pattern in patterns:
+                    for found in literal_pattern.finditer(content):
+                        allowed_sample = (
+                            literal_pattern.pattern == r"relay[.]example[.]com"
+                            and path == ROOT / "scripts" / "relay_contract.py"
+                            and found.group() == "relay" + ".example.com"
+                        )
+                        with self.subTest(
+                            path=str(path.relative_to(ROOT)), found=found.group()
+                        ):
+                            self.assertTrue(allowed_sample)
+
+    def test_example_placeholders_are_known(self):
+        paths = list((ROOT / "examples").glob("*.json")) + [ROOT / "README.md"]
+        for path in paths:
+            with self.subTest(path=str(path.relative_to(ROOT))):
+                names = set(contract.PLACEHOLDER.findall(path.read_text(encoding="utf-8")))
+                self.assertTrue(names.issubset(contract.PLACEHOLDER_NAMES), names)
+
+    def test_unrendered_example_is_rejected(self):
+        payload = contract.load_json(ROOT / "examples" / "connect-existing.json")
+        with self.assertRaisesRegex(contract.ContractError, "session_id"):
+            contract.render(payload, {})
+
+    def test_cli_requires_sample_or_vars(self):
+        error = io.StringIO()
+        with redirect_stderr(error):
+            result = contract.main([
+                "request", str(ROOT / "examples" / "connect-existing.json")
+            ])
+        self.assertEqual(result, 1)
+        self.assertIn("Unresolved placeholder: session_id", error.getvalue())
+        self.assertIn("--var or --sample", error.getvalue())
+
+    def test_cli_rejects_unknown_variable(self):
+        error = io.StringIO()
+        with redirect_stderr(error):
+            result = contract.main([
+                "request", str(ROOT / "examples" / "connect-existing.json"),
+                "--var", "unknown=value",
+            ])
+        self.assertEqual(result, 1)
+        self.assertIn("Unknown variable: unknown", error.getvalue())
 
     def test_manifest_and_only_devin_root_skills(self):
         manifest = contract.load_json(ROOT / ".devin-plugin" / "plugin.json")
         self.assertEqual(manifest["name"], "grok-devin-relay")
         expected = {
             "relay-install", "relay-bootstrap-devin", "relay-connect-session",
-            "relay-message", "grok-relay-report",
+            "relay-message", "relay-update", "relay-cleanup", "grok-relay-report",
         }
         paths = list((ROOT / "skills").glob("*/SKILL.md"))
         self.assertEqual({path.parent.name for path in paths}, expected)
@@ -480,19 +537,55 @@ class PackageTests(unittest.TestCase):
     def test_automation_examples_are_disabled_and_have_restricted_egress(self):
         for path in (ROOT / "examples").glob("automation-*.json"):
             with self.subTest(path=path.name):
-                config = contract.load_json(path)
+                config = contract.render(contract.load_json(path), VARS)
                 self.assertFalse(config["enabled"])
                 self.assertEqual(config["triggers"], [
                     {"event_type": "webhook:incoming", "replies": []}
                 ])
-                self.assertEqual(config["tools"]["mcp_servers"], [])
+                self.assertEqual(config["tools"], {
+                    "mcp_servers": [], "linear_enabled": False
+                })
                 self.assertEqual(config["run_as"], {"type": "creator"})
                 hosts = config["session_settings"]["net_policy"]["allow"]
                 self.assertEqual(hosts, [
                     {"hostname": "git-manager.devin.ai"},
-                    {"hostname": "relay.example.com"},
+                    {"hostname": VARS["relay_host"]},
                 ])
+                self.assertEqual(config["concurrency"]["max_concurrent_runs"], 1)
+                self.assertIn(
+                    config["limits"]["invocations"]["window_seconds"],
+                    {900, 3600, 21600, 43200, 86400, 604800},
+                )
+                mode = config["session_settings"]["devin_mode"]
+                self.assertTrue(
+                    mode is None or mode in {"normal", "fast", "lite", "ultra", "fusion"}
+                )
+                self.assertIn(
+                    config["actions"][0]["type"], {"start_session", "message_session"}
+                )
                 self.assertIn("EXAMPLE ONLY", config["actions"][0]["prompt"])
+
+    def test_configuration_reference_covers_every_automation_field(self):
+        reference = (ROOT / "shared" / "configuration.md").read_text(encoding="utf-8")
+        for field in (
+            "Payload filter", "Agent type", "Destination session", "Instructions",
+            "Agent mode", "Run as", "MCPs", "Notifications", "Shared scratchpad",
+            "Network policy", "Metadata", "Spend limit", "Rate limit",
+            "Concurrent runs", "Queue depth", "webhook:incoming", "start_session",
+            "message_session", "triage_session", "start_code_scan",
+            "scan_new_commits", "target_devin_id", "auto_create", "devin_mode",
+            "fallback_devin_mode", "run_as", "mcp_servers", "linear_enabled",
+            "net_policy", "max_acu_limit", "max_per_window", "window_seconds",
+            "max_concurrent_runs", "max_queue_depth",
+        ):
+            with self.subTest(field=field):
+                self.assertIn(field, reference)
+        update_skill = (ROOT / "skills" / "relay-update" / "SKILL.md").read_text(
+            encoding="utf-8"
+        )
+        for field in ("Payload filter", "Shared scratchpad", "Agent mode", "Queue depth"):
+            with self.subTest(update_field=field):
+                self.assertIn(field, update_skill)
 
     def test_offline_helper_has_no_transport_imports(self):
         tree = ast.parse((ROOT / "scripts" / "relay_contract.py").read_text(encoding="utf-8"))

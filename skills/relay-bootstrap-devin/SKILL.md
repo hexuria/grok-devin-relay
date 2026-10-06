@@ -19,6 +19,10 @@ skill and follow its approval, identity, and network rules.
    and the owner's decision. Creator is needed for personal credentials; an
    organization-owned identity needs compatible credentials. Do not grant
    Linear, Slack, or other connectors merely because the UI offers them.
+   Decide the UI fields: Agent type, Destination session, Instructions, Agent
+   mode, Run as, MCPs, Notifications, Shared scratchpad, Network policy,
+   Metadata, Limits, Enable queueing, and Payload filter. See
+   `../../shared/configuration.md` for the field reference.
 4. Prepare one `webhook:incoming` trigger and a `message_session` action:
    either an explicitly approved existing control-plane session, or
    `auto_create: true` with no target for a new persistent control plane.
@@ -30,7 +34,7 @@ skill and follow its approval, identity, and network rules.
    to change the approved destination.
 6. For spawned sessions, start from the schema's Git Manager policy and add
    the org's verified return-relay host (resolved from the approved secret
-   reference, e.g. `relay.example.com`). Preserve unrelated policy entries on
+   reference, e.g. `${relay_host}`). Preserve unrelated policy entries on
    updates. Respect a governing security profile.
    Check an existing session's effective policy separately.
 7. Include dispatch-failure email unless declined. Ask for cost/rate caps and

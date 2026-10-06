@@ -31,8 +31,10 @@ Use only in Devin. Read `../../shared/protocol.md` and
 6. Read live schemas and integrations. Prepare a separate `webhook:incoming`
    automation; keep the first/bootstrap webhook intact. Include the approved
    repository, versioned response policy, secret references, and direction/loop
-   protections in instructions. Choose identity, MCP grants, networking,
-   notifications, and limits using the configuration guide.
+   protections in instructions. Decide the UI fields: Agent type, Destination
+   session, Instructions, Agent mode, Run as, MCPs, Notifications, Shared
+   scratchpad, Network policy, Metadata, Limits, Enable queueing, and Payload
+   filter. See `../../shared/configuration.md` for the field reference.
 7. Validate the exact payload, propose it for native approval, then inspect the
    approval result and saved configuration. Do not send the original task to
    the new destination before setup is verified.

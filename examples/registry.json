@@ -2,17 +2,17 @@
   "protocol_version": "1",
   "bots": {
     "pua-review": {
-      "org_id": "org-example",
-      "owner_id": "user-example",
-      "automation_id": "auto-example",
+      "org_id": "${org_id}",
+      "owner_id": "${owner_id}",
+      "automation_id": "${automation_id}",
       "session_mode": "existing",
-      "session_id": "devin-00000000000000000000000000000001",
+      "session_id": "devin-${session_id}",
       "allowed_repos": ["hexuria/pua"],
       "inbox_url_secret_ref": "adapter:grok:pua-review-inbox-url",
       "inbox_key_secret_ref": "adapter:grok:pua-review-inbox-secret",
       "return_url_secret_ref": "secret:repo:hexuria/pua:GROK_WEBHOOK_URL",
       "return_key_secret_ref": "adapter:devin:pua-review-return-key",
-      "return_host": "relay.example.com"
+      "return_host": "${relay_host}"
     }
   }
 }
