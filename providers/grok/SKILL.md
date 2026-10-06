@@ -93,14 +93,14 @@ that Devin session and keep paused.
 
 ## Update
 
-Changing a routine's instructions or destination on the Grok side uses the
-host's documented tools — never a fabricated endpoint. Read the saved
-configuration first and resend every field a replace-style update would drop.
-Keep the direction/loop protections inside any edited prompt. Retargeting a
-bot to a different session or rotating a stored secret is a reconnect, not an
-edit: run the connect flow again and confirm with the owner. Sync the registry
-whenever routing changes, and tell Devin through the approved report path when
-a change alters anything it depends on.
+A Grok routine has only instructions. Updating one means editing its
+instructions; there are no other fields to manage. Use the host's documented
+tools — never a fabricated endpoint. Read the saved instructions first and
+retain direction/loop protections. Retargeting a bot to a different session
+or rotating a stored secret is a reconnect, not an edit: run the connect flow
+again and confirm with the owner. Sync the registry whenever routing changes,
+and tell Devin through the approved report path when a change alters anything
+it depends on.
 
 ## Cleanup
 
@@ -112,8 +112,9 @@ same. The receiver never forwards again — that prevents loops.
 
 1. Confirm scope with the owner: the `bot_id`, and whether the whole relay
    ends (`include_bootstrap` — requires explicit confirmation).
-2. Delete the bot's routines/scheduled jobs and its registry entries on Grok's
-   side through supported host tools. Leave other bots untouched.
+2. A Grok routine has only instructions and no other fields to manage. Delete
+   the bot's routines/scheduled jobs and its registry entries on Grok's side
+   through supported host tools. Leave other bots untouched.
 3. POST a `disconnect` request to the Devin bootstrap inbox with
    `origin: "grok"` and the same `include_bootstrap`, using the inbox's
    `X-Webhook-Secret`. Devin then deletes its automations for that bot.

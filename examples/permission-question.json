@@ -4,7 +4,7 @@
   "bot_id": "pua-review",
   "kind": "question",
   "repo": "hexuria/pua",
-  "session_url": "https://app.devin.ai/sessions/00000000000000000000000000000001",
+  "session_url": "https://app.devin.ai/sessions/${session_id}",
   "pr": null,
   "summary": "Should I prepare a separate test webhook?",
   "details": "No live configuration will change without the required approval.",

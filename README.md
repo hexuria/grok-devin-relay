@@ -38,7 +38,7 @@ Each step maps to one skill. Run them in order.
      "repo": "hexuria/pua",
      "session": {
        "mode": "existing",
-       "target": "https://app.devin.ai/sessions/00000000000000000000000000000001",
+       "target": "https://app.devin.ai/sessions/${session_id}",
        "if_missing": "block"
      }
    }

@@ -12,12 +12,25 @@ Use only in Devin. Read `../../shared/protocol.md` and
 
 1. Find the automation: `list`, then `get` each candidate, matching on
    `bot_id` / `relay_role` metadata — never on the name alone.
-2. Read the saved configuration and pin down exactly which fields change:
-   instructions/prompt, target session, `auto_create`, network policy,
-   tool/MCP grants, notifications, limits, enabled flag, metadata.
-   Update is PATCH — omitted fields stay unchanged, and `schemas` says
-   whether each passed group merges or replaces. When a group replaces,
-   resend every member you want to keep.
+2. Read the saved configuration and use this UI-field checklist:
+   Name (`name`), Active toggle (`enabled`), Trigger: Webhook
+   (`triggers[].event_type`), Secret (`X-Webhook-Secret`; editor-only
+   rotation), Payload filter (editor-only), Agent type
+   (`actions[].type`), Destination session (`target_devin_id`, `auto_create`),
+   Instructions (`actions[].prompt`), Agent mode (`session_settings.devin_mode`),
+   Run as (`run_as.type`), MCPs (`tools`), Notifications (`notifications`),
+   Shared scratchpad (editor-only), Network policy
+   (`session_settings.net_policy`), Metadata (`metadata`), Spend limit
+   (`limits.max_acu_limit`), Rate limit (`limits.invocations`), Concurrent
+   runs (`concurrency.max_concurrent_runs`), Queue depth
+   (`concurrency.max_queue_depth`), and Security profile (owner-selected).
+   Payload filter, Shared scratchpad, and Secret rotation are editor-only:
+   tell the owner to change the Payload filter, Shared scratchpad (Advanced)
+   toggle, or webhook Secret rotate control in the automation editor.
+   Update is merge-patch: omitted top-level parameters and omitted keys within
+   a passed group stay unchanged, `null` clears a key, and lists replace
+   wholesale. Resend every list entry you want to keep. See
+   `../../shared/configuration.md` for details.
 3. Editing the instructions: copy the text between the `BEGIN/END PROMPT`
    markers into a local file, edit it, and resend the full `actions` array
    with `"prompt": "file:///absolute/path"`. Never retype a long prompt, and

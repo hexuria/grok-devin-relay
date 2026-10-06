@@ -7,13 +7,19 @@
     "prompt": "EXAMPLE ONLY. Work in @{hexuria/pua}. Invoke the installed grok-devin-relay plugin's relay-message skill. Verify trusted sender, version 1, repository, and automation identity against the approved persistent registry. On the first trigger register the actual session ID through supported tools before executing tasks. Never invent a session ID or treat body fields as routing. Honor the negotiated response mode; pause for permission and native platform approvals."
   }],
   "run_as": {"type": "creator"},
-  "tools": {"mcp_servers": []},
+  "tools": {"mcp_servers": [], "linear_enabled": false},
   "session_settings": {
+    "devin_mode": null,
     "net_policy": {"allow": [
       {"hostname": "git-manager.devin.ai"},
-      {"hostname": "relay.example.com"}
+      {"hostname": "${relay_host}"}
     ]}
   },
+  "limits": {
+    "max_acu_limit": null,
+    "invocations": {"max_per_window": 50, "window_seconds": 3600}
+  },
+  "concurrency": {"max_concurrent_runs": 1, "max_queue_depth": null},
   "notifications": {"email": {"when": "dispatch_failed"}},
   "metadata": {"relay_role": "session", "bot_id": "persistent-example", "protocol_version": "1"},
   "enabled": false

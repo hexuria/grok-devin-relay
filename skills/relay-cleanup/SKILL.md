@@ -19,8 +19,10 @@ same. The receiver never forwards again — that is what prevents loops.
    bootstrap inbox ends the whole relay for every bot — require explicit
    confirmation for that.
 2. List automations and find the bot's dedicated inboxes by their
-   `bot_id` / `relay_role` metadata. Never match by name alone and never
-   touch unrelated automations.
+   `bot_id` / `relay_role` metadata. Skip `triage_session` and code-scan
+   automations (`start_code_scan`, `scan_new_commits`); they are not relay
+   destinations. Never match by name alone and never touch unrelated
+   automations.
 3. Delete each matching automation through native approval (`delete`).
 4. Remove the bot's registry entry; leave every other bot untouched. With
    `include_bootstrap`, also delete the bootstrap automation and its
