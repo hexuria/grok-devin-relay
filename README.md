@@ -17,6 +17,7 @@ Each step maps to one skill. Run them in order.
 | 3 | `providers/grok/SKILL.md` | Install Grok's adapter on its side and bootstrap its return relay. |
 | 4 | `relay-connect-session` | Connect a bot to a Devin session — existing, new-persistent, or new-per-task — by creating a dedicated webhook. |
 | 5 | `relay-message` + `grok-relay-report` | Handle tasks in the session; send reports and questions back to Grok. |
+| — | `relay-update` | Change an existing webhook's instructions, target session, networking, or grants — with approval. |
 | — | `relay-cleanup` | Remove a bot's automations and registry entries on Devin plus its routines on Grok — one chat request cleans both sides. |
 
 ## Walkthrough

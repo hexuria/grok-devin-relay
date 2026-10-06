@@ -462,7 +462,7 @@ class PackageTests(unittest.TestCase):
         self.assertEqual(manifest["name"], "grok-devin-relay")
         expected = {
             "relay-install", "relay-bootstrap-devin", "relay-connect-session",
-            "relay-message", "relay-cleanup", "grok-relay-report",
+            "relay-message", "relay-update", "relay-cleanup", "grok-relay-report",
         }
         paths = list((ROOT / "skills").glob("*/SKILL.md"))
         self.assertEqual({path.parent.name for path in paths}, expected)

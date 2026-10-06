@@ -91,6 +91,17 @@ state. Use the documented existing-session API or an approved inbox fixed to
 that session. If neither is configured, tell the owner to answer directly in
 that Devin session and keep paused.
 
+## Update
+
+Changing a routine's instructions or destination on the Grok side uses the
+host's documented tools — never a fabricated endpoint. Read the saved
+configuration first and resend every field a replace-style update would drop.
+Keep the direction/loop protections inside any edited prompt. Retargeting a
+bot to a different session or rotating a stored secret is a reconnect, not an
+edit: run the connect flow again and confirm with the owner. Sync the registry
+whenever routing changes, and tell Devin through the approved report path when
+a change alters anything it depends on.
+
 ## Cleanup
 
 One request cleans both sides: whichever side is asked first cleans its own
