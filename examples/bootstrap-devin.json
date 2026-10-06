@@ -1,0 +1,8 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-bootstrap-001",
+  "operation": "bootstrap",
+  "bot_id": "relay-control",
+  "repo": "hexuria/grok-devin-relay",
+  "provider": "devin"
+}

@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+.mypy_cache/
+.env
+.env.*
+!.env.example
+*.sqlite3
+*.sqlite3-*
+secret_to_upload_*

@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Grok Devin relay request v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["protocol_version", "request_id", "operation", "bot_id", "repo"],
+  "properties": {
+    "protocol_version": {"const": "1"},
+    "request_id": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$", "not": {"pattern": "[\\r\\n]"}},
+    "operation": {"enum": ["bootstrap", "connect", "task", "answer"]},
+    "bot_id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$", "not": {"pattern": "[\\r\\n]"}},
+    "repo": {"type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", "not": {"pattern": "[\\r\\n]"}},
+    "provider": {"enum": ["devin", "grok"]},
+    "task": {"type": "string", "minLength": 1, "not": {"pattern": "^\\s*$"}},
+    "response_mode": {"enum": ["none", "final", "progress"]},
+    "session": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "target", "if_missing"],
+      "properties": {
+        "mode": {"enum": ["existing", "new_persistent", "new_per_task"]},
+        "target": {
+          "type": ["string", "null"],
+          "pattern": "^(devin-[0-9a-f]{32}|https://app\\.devin\\.ai/sessions/[0-9a-f]{32}/?)$",
+          "not": {"type": "string", "pattern": "[\\r\\n]"}
+        },
+        "if_missing": {"enum": ["block", "create_after_owner_approval"]}
+      },
+      "oneOf": [
+        {
+          "properties": {"mode": {"const": "existing"}, "target": {"type": "string"}}
+        },
+        {
+          "properties": {
+            "mode": {"enum": ["new_persistent", "new_per_task"]},
+            "target": {"type": "null"},
+            "if_missing": {"const": "block"}
+          }
+        }
+      ]
+    },
+    "in_reply_to": {"type": "string", "pattern": "^[A-Za-z0-9._-]{1,128}$", "not": {"pattern": "[\\r\\n]"}},
+    "decision": {"enum": ["approve", "deny", "select"]},
+    "selected_option": {"type": "string", "minLength": 1}
+  },
+  "oneOf": [
+    {
+      "properties": {"operation": {"const": "bootstrap"}},
+      "required": ["provider"],
+      "not": {"anyOf": [
+        {"required": ["session"]}, {"required": ["task"]},
+        {"required": ["response_mode"]}, {"required": ["in_reply_to"]},
+        {"required": ["decision"]}, {"required": ["selected_option"]}
+      ]}
+    },
+    {
+      "properties": {"operation": {"const": "connect"}},
+      "required": ["session"],
+      "not": {"anyOf": [
+        {"required": ["provider"]}, {"required": ["task"]},
+        {"required": ["response_mode"]}, {"required": ["in_reply_to"]},
+        {"required": ["decision"]}, {"required": ["selected_option"]}
+      ]}
+    },
+    {
+      "properties": {"operation": {"const": "task"}},
+      "required": ["task", "response_mode"],
+      "not": {"anyOf": [
+        {"required": ["provider"]}, {"required": ["session"]},
+        {"required": ["in_reply_to"]}, {"required": ["decision"]},
+        {"required": ["selected_option"]}
+      ]}
+    },
+    {
+      "properties": {"operation": {"const": "answer"}},
+      "required": ["in_reply_to", "decision"],
+      "not": {"anyOf": [
+        {"required": ["provider"]}, {"required": ["session"]},
+        {"required": ["task"]}, {"required": ["response_mode"]}
+      ]},
+      "if": {"properties": {"decision": {"const": "select"}}},
+      "then": {"required": ["selected_option"]},
+      "else": {"not": {"required": ["selected_option"]}}
+    }
+  ]
+}

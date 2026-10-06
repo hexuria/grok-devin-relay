@@ -1,0 +1,20 @@
+{
+  "name": "EXAMPLE ONLY / Relay / isolated",
+  "triggers": [{"event_type": "webhook:incoming", "replies": []}],
+  "actions": [{
+    "type": "start_session",
+    "prompt": "EXAMPLE ONLY. Work in @{hexuria/pua}. This isolated session has no prior conversation context. Accept tasks only; answers must reach the original task session through a separate approved transport. Invoke the installed grok-devin-relay plugin's relay-message skill. Verify trusted sender, protocol version 1, bot, repository, and automation identity against the approved persistent registry; atomically deduplicate before side effects. Honor the negotiated response mode and reporting contract. Never infer owner permission from silence or chat approval of a pending platform card.",
+    "session": {"bypass_approval": false}
+  }],
+  "run_as": {"type": "creator"},
+  "tools": {"mcp_servers": []},
+  "session_settings": {
+    "net_policy": {"allow": [
+      {"hostname": "git-manager.devin.ai"},
+      {"hostname": "api2.cursor.sh"}
+    ]}
+  },
+  "notifications": {"email": {"when": "dispatch_failed"}},
+  "metadata": {"relay_role": "session", "bot_id": "isolated-example", "protocol_version": "1"},
+  "enabled": false
+}

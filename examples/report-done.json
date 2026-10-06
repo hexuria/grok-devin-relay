@@ -1,0 +1,15 @@
+{
+  "protocol_version": "1",
+  "request_id": "example-task-001",
+  "bot_id": "pua-review",
+  "kind": "done",
+  "repo": "hexuria/pua",
+  "session_url": "https://app.devin.ai/sessions/1cc5cef5b0f04938a9f49ce7cd0d9fd0",
+  "pr": null,
+  "summary": "Review completed without changes.",
+  "details": "This is a synthetic protocol fixture, not a real completion report.",
+  "options": [],
+  "default_if_no_answer": null,
+  "question_id": null,
+  "decision_type": null
+}

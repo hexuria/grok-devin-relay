@@ -1,0 +1,18 @@
+{
+  "protocol_version": "1",
+  "bots": {
+    "pua-review": {
+      "org_id": "org-example",
+      "owner_id": "user-example",
+      "automation_id": "auto-example",
+      "session_mode": "existing",
+      "session_id": "devin-1cc5cef5b0f04938a9f49ce7cd0d9fd0",
+      "allowed_repos": ["hexuria/pua"],
+      "inbox_url_secret_ref": "adapter:grok:pua-review-inbox-url",
+      "inbox_key_secret_ref": "adapter:grok:pua-review-inbox-secret",
+      "return_url_secret_ref": "secret:repo:hexuria/pua:GROK_WEBHOOK_URL",
+      "return_key_secret_ref": "adapter:devin:pua-review-return-key",
+      "return_host": "api2.cursor.sh"
+    }
+  }
+}
